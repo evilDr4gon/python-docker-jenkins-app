@@ -50,9 +50,13 @@ docker_scan:
   dependencies:
     - build
   script:
+    # Asegurarse de que el archivo tar esté presente
+    - ls -lh image.tar
+
     # Escanear la imagen desde el archivo tar
     - trivy image --input image.tar --severity HIGH,CRITICAL
-  allow_failure: false # Falla el pipeline si se detectan vulnerabilidades críticas
+  artifacts:
+    when: always
 
 # Job para subir la imagen al registro
 push:
