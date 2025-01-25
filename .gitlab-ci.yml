@@ -15,12 +15,11 @@ test:
   script:
     # Linting
     - pip install flake8
-    - flake8 app/ tests/ --exit-zero  
+    - flake8 app/ tests/ --exit-zero
 
     # Pruebas unitarias
     - pip install -r requirements.txt
-    - pytest  tests/ --junitxml=report.xml
-
+    - pytest tests/ --junitxml=report.xml
   artifacts:
     paths:
       - report.xml
@@ -33,8 +32,12 @@ build:
   services:
     - docker:dind
   script:
+    # Construir la imagen
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
-    - docker tag $IMAGE_NAME:$CI_COMMIT_SHORT_SHA $IMAGE_NAME:latest
+    - docker save -o app-image.tar $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+  artifacts:
+    paths:
+      - app-image.tar
 
 # Push de la imagen al registro
 push:
@@ -42,9 +45,16 @@ push:
   stage: push
   services:
     - docker:dind
+  dependencies:
+    - build
   script:
-    - docker images
-    - echo "dckr_pat_zwGUehrkDTtA3bg0V5os4pOj-qQ" | docker login -u "d4rkghost47" --password-stdin 
+    # Cargar la imagen desde el artefacto
+    - docker load -i app-image.tar
+
+    # Loguearse al registro
+    - echo "dckr_pat_zwGUehrkDTtA3bg0V5os4pOj-qQ" | docker login -u "d4rkghost47" --password-stdin
+
+    # Subir la imagen al destino
     - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
     - docker push $IMAGE_NAME:latest
 
