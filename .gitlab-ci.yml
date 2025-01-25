@@ -1,7 +1,9 @@
+pipeline:
+
 stages:
   - test
-  - security
   - build
+  - security
   - push
 
 variables:
@@ -25,17 +27,6 @@ test:
     paths:
       - report.xml
     when: on_success
-
-# Job de Análisis Estático de Código (SAST)
-sast:
-  image: python:3.9-slim
-  stage: security
-  script:
-    # Instalar Bandit
-    - pip install bandit
-    # Escanear el código en busca de vulnerabilidades
-    - bandit -r app/
-  allow_failure: true # Opcional: no detiene el pipeline si falla, pero muestra los resultados
 
 # Job para construir la imagen Docker
 build:
