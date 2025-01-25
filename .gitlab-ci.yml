@@ -38,6 +38,5 @@ build:
     - echo "dckr_pat_zwGUehrkDTtA3bg0V5os4pOj-qQ" | docker login -u "d4rkghost47" --password-stdin
 
     # Subir las etiquetas de la imagen
-    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-    - docker push $IMAGE_NAME:latest
+    - docker push $IMAGE_NAME --all-tags
 
