@@ -6,15 +6,25 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
-  IMAGE_NAME: $CI_REGISTRY_IMAGE/my-python-app
+  IMAGE_NAME: d4rkghost47/python-app-gitlab-ci
 
+# Pruebas unitarias con linting y publicación de resultados
 test:
   image: python:3.9-slim
   stage: test
   script:
+    # Linting
+    - pip install flake8
+    - flake8 . --exit-zero  # No bloquea el pipeline
+    # Pruebas unitarias
     - pip install -r requirements.txt
-    - pytest
+    - pytest --junitxml=report.xml
+  artifacts:
+    paths:
+      - report.xml
+    when: always
 
+# Construcción de la imagen Docker
 build:
   image: docker:latest
   stage: build
@@ -24,13 +34,14 @@ build:
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
     - docker tag $IMAGE_NAME:$CI_COMMIT_SHORT_SHA $IMAGE_NAME:latest
 
+# Push de la imagen al registro
 push:
   image: docker:latest
   stage: push
   services:
     - docker:dind
   script:
-    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin $CI_REGISTRY
+    - echo "dckr_pat_zwGUehrkDTtA3bg0V5os4pOj-qQ" | docker login -u "d4rkghost47" --password-stdin 
     - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
     - docker push $IMAGE_NAME:latest
 
