@@ -15,10 +15,12 @@ test:
   script:
     # Linting
     - pip install flake8
-    - flake8 . --exit-zero  # No bloquea el pipeline
+    - flake8 app/ tests/ --exit-zero  
+
     # Pruebas unitarias
     - pip install -r requirements.txt
-    - pytest --junitxml=report.xml
+    - pytest  tests/ --junitxml=report.xml
+
   artifacts:
     paths:
       - report.xml

@@ -1,10 +1,42 @@
+# Entornos de desarrollo y configuraciones de IDEs
 .idea/
 .vscode/
-.venv*/
-venv*/
+*.swp
+
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Cachés de Python
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyd.*
+
+# Archivos y directorios de compilación
+build/
 dist/
-.coverage*
+*.egg-info/
+.eggs/
+
+# Resultados de pruebas y cobertura
+.coverage
+.coverage.*
 htmlcov/
 .tox/
+.pytest_cache/
+
+# Documentación generada
 docs/_build/
+
+# Archivos de Docker
+*.log
+docker-compose.override.yml
+
+# Archivos generados localmente
+*.DS_Store
+Thumbs.db
+
