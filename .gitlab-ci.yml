@@ -1,5 +1,6 @@
 stages:
   - test
+  - security
   - build
   - push
 
@@ -25,6 +26,17 @@ test:
       - report.xml
     when: success
 
+# Job de Análisis Estático de Código (SAST)
+sast:
+  image: python:3.9-slim
+  stage: security
+  script:
+    # Instalar Bandit
+    - pip install bandit
+    # Escanear el código en busca de vulnerabilidades
+    - bandit -r app/
+  allow_failure: true # Opcional: no detiene el pipeline si falla, pero muestra los resultados
+
 # Job para construir la imagen Docker
 build:
   image: docker:latest
@@ -41,6 +53,17 @@ build:
     paths:
       - image.tar
     expire_in: 1 hour # Limita la duración del artefacto
+
+# Job para escaneo de la imagen Docker
+docker_scan:
+  image: aquasec/trivy:latest
+  stage: security
+  dependencies:
+    - build
+  script:
+    # Escanear la imagen desde el archivo tar
+    - trivy image --input image.tar --severity HIGH,CRITICAL
+  allow_failure: false # Falla el pipeline si se detectan vulnerabilidades críticas
 
 # Job para subir la imagen al registro
 push:
