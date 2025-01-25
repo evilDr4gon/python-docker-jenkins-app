@@ -1,7 +1,6 @@
 stages:
   - test
-  - build
-  - push
+  - build_push
 
 variables:
   DOCKER_DRIVER: overlay2
@@ -28,29 +27,12 @@ test:
 # Construcción de la imagen Docker
 build:
   image: docker:latest
-  stage: build
+  stage: build_push
   services:
     - docker:dind
   script:
     # Construir la imagen con ambas etiquetas
     - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -t $IMAGE_NAME:latest .
-    # Guardar la imagen como artefacto
-    - docker save -o app-image.tar $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
-  artifacts:
-    paths:
-      - app-image.tar
-
-# Push de la imagen al registro
-push:
-  image: docker:latest
-  stage: push
-  services:
-    - docker:dind
-  dependencies:
-    - build
-  script:
-    # Cargar la imagen desde el artefacto
-    - docker load -i app-image.tar
 
     # Loguearse al registro
     - echo "dckr_pat_zwGUehrkDTtA3bg0V5os4pOj-qQ" | docker login -u "d4rkghost47" --password-stdin
