@@ -43,6 +43,7 @@ push:
   services:
     - docker:dind
   script:
+    - docker images
     - echo "dckr_pat_zwGUehrkDTtA3bg0V5os4pOj-qQ" | docker login -u "d4rkghost47" --password-stdin 
     - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
     - docker push $IMAGE_NAME:latest
