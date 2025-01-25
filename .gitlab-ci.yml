@@ -32,8 +32,9 @@ build:
   services:
     - docker:dind
   script:
-    # Construir la imagen
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+    # Construir la imagen con ambas etiquetas
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -t $IMAGE_NAME:latest .
+    # Guardar la imagen como artefacto
     - docker save -o app-image.tar $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
   artifacts:
     paths:
@@ -54,7 +55,7 @@ push:
     # Loguearse al registro
     - echo "dckr_pat_zwGUehrkDTtA3bg0V5os4pOj-qQ" | docker login -u "d4rkghost47" --password-stdin
 
-    # Subir la imagen al destino
+    # Subir las etiquetas de la imagen
     - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
     - docker push $IMAGE_NAME:latest
 
