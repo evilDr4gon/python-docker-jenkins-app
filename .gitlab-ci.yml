@@ -24,7 +24,7 @@ test:
   artifacts:
     paths:
       - report.xml
-    when: success
+    when: on_success
 
 # Job de Análisis Estático de Código (SAST)
 sast:
