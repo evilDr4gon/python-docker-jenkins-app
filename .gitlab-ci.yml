@@ -54,7 +54,7 @@ docker_scan:
     - ls -lh image.tar
 
     # Escanear la imagen desde el archivo tar
-    - trivy image --input image.tar --severity HIGH,CRITICAL
+    - image --input image.tar --severity HIGH,CRITICAL
   artifacts:
     when: always
 
