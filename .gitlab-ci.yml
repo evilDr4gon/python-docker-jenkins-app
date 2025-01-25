@@ -23,7 +23,7 @@ test:
   artifacts:
     paths:
       - report.xml
-    when: always
+    when: success
 
 # Job para construir la imagen Docker
 build:
