@@ -45,7 +45,9 @@ build:
 
 # Job para escaneo de la imagen Docker
 docker_scan:
-  image: aquasec/trivy:latest
+  image: 
+    name: aquasec/trivy:latest
+    entrypoint: [""]
   stage: security
   dependencies:
     - build
@@ -55,6 +57,7 @@ docker_scan:
 
     # Escanear la imagen desde el archivo tar
     - image --input image.tar --severity HIGH,CRITICAL
+
   artifacts:
     when: always
 
