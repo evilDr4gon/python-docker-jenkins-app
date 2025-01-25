@@ -1,13 +1,14 @@
 stages:
   - test
-  - build_push
+  - build
+  - push
 
 variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   IMAGE_NAME: d4rkghost47/python-app-gitlab-ci
 
-# Pruebas unitarias con linting y publicación de resultados
+# Job de pruebas unitarias con linting
 test:
   image: python:3.9-slim
   stage: test
@@ -24,19 +25,40 @@ test:
       - report.xml
     when: always
 
-# Construcción de la imagen Docker
+# Job para construir la imagen Docker
 build:
   image: docker:latest
-  stage: build_push
+  stage: build
   services:
     - docker:dind
   script:
-    # Construir la imagen con ambas etiquetas
-    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -t $IMAGE_NAME:latest .
+    # Construir la imagen con etiqueta temporal
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA .
+
+    # Exportar la imagen como un archivo tar
+    - docker save $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -o image.tar
+  artifacts:
+    paths:
+      - image.tar
+    expire_in: 1 hour # Limita la duración del artefacto
+
+# Job para subir la imagen al registro
+push:
+  image: docker:latest
+  stage: push
+  services:
+    - docker:dind
+  dependencies:
+    - build
+  script:
+    # Importar la imagen desde el artefacto
+    - docker load -i image.tar
 
     # Loguearse al registro
     - echo "dckr_pat_zwGUehrkDTtA3bg0V5os4pOj-qQ" | docker login -u "d4rkghost47" --password-stdin
 
-    # Subir las etiquetas de la imagen
-    - docker push $IMAGE_NAME --all-tags
+    # Subir la imagen con ambas etiquetas
+    - docker tag $IMAGE_NAME:$CI_COMMIT_SHORT_SHA $IMAGE_NAME:latest
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $IMAGE_NAME:latest
 
