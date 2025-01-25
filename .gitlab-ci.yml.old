@@ -1,0 +1,43 @@
+stages:
+  - test
+  - build_push
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  IMAGE_NAME: d4rkghost47/python-app-gitlab-ci
+
+# Pruebas unitarias con linting y publicación de resultados
+test:
+  image: python:3.9-slim
+  stage: test
+  script:
+    # Linting
+    - pip install flake8
+    - flake8 app/ tests/ --exit-zero
+
+    # Pruebas unitarias
+    - pip install -r requirements.txt
+    - pytest tests/ --junitxml=report.xml
+  artifacts:
+    paths:
+      - report.xml
+    when: always
+
+# Construcción de la imagen Docker
+build:
+  image: docker:latest
+  stage: build_push
+  services:
+    - docker:dind
+  script:
+    # Construir la imagen con ambas etiquetas
+    - docker build -t $IMAGE_NAME:$CI_COMMIT_SHORT_SHA -t $IMAGE_NAME:latest .
+
+    # Loguearse al registro
+    - echo "dckr_pat_zwGUehrkDTtA3bg0V5os4pOj-qQ" | docker login -u "d4rkghost47" --password-stdin
+
+    # Subir las etiquetas de la imagen
+    - docker push $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - docker push $IMAGE_NAME:latest
+
