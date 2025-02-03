@@ -9,9 +9,6 @@ pipeline {
 
     stages {
         stage('Construir y Subir Imagen Docker') {
-            when { 
-                expression { env.BRANCH_NAME == 'main' } // ✅ Filtrar usando BRANCH_NAME
-            }
             steps {
                 container('dind') {
                     script {
