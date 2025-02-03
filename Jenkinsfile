@@ -1,4 +1,3 @@
-// pipeline
 pipeline {
     agent {
         label 'jenkinsv2-jenkins-agent'
@@ -10,7 +9,9 @@ pipeline {
 
     stages {
         stage('Construir y Subir Imagen Docker') {
-            when { branch 'main' } // 🔥 Solo ejecuta este stage en "main"
+            when { 
+                expression { env.BRANCH_NAME == 'main' } // ✅ Filtrar usando BRANCH_NAME
+            }
             steps {
                 container('dind') {
                     script {
@@ -54,3 +55,4 @@ pipeline {
         }
     }
 }
+
