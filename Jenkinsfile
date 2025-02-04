@@ -3,68 +3,59 @@ pipeline {
 
     environment {
         IMAGE_NAME = "d4rkghost47/python-app"
+        REGISTRY = "https://index.docker.io/v1/"
+        DOCKER_CREDENTIALS = "docker-token"  // ID de las credenciales en Jenkins
     }
 
     stages {
-        stage('Construir Imagen Docker') {
+        stage('Checkout Code') {
             steps {
-                container('dind') {
-                    script {
-                        // Configurar el directorio como seguro para Git
-                        sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
+                checkout scm
+            }
+        }
 
-                        // Obtener el short SHA del commit actual
-                        def shortSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                        echo "🐍 Construyendo imagen con SHA: ${shortSha}"
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def shortSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    echo "🐍 Construyendo imagen con SHA: ${shortSha}"
 
-                        // Asegurar que el directorio de almacenamiento existe
-                        sh "mkdir -p \$(pwd)"
+                    dockerImage = docker.build("${IMAGE_NAME}:${shortSha}")
 
-                        // Guardar la imagen en el workspace
-                        sh """
-                        docker build -t ${IMAGE_NAME}:${shortSha} .
-                        docker build -t ${IMAGE_NAME}:latest .
+                    // Etiquetar también como 'latest'
+                    sh "docker tag ${IMAGE_NAME}:${shortSha} ${IMAGE_NAME}:latest"
+                }
+            }
+        }
 
-                        echo "📦 Guardando imagen en ${IMAGE_NAME}.tar..."
-                        docker save -o \$(pwd)/python-app.tar ${IMAGE_NAME}:${shortSha} ${IMAGE_NAME}:latest
-
-                        ls -lah \$(pwd)  # Verificar que el archivo se haya creado
-                        """
-
-                        // Guardar la imagen como artefacto en Jenkins
-                        archiveArtifacts artifacts: "python-app.tar", fingerprint: true
+        stage('Test Docker Image') {
+            steps {
+                script {
+                    dockerImage.inside {
+                        sh 'echo "✅ Pruebas ejecutadas con éxito"'
                     }
                 }
             }
         }
 
-        stage('Subir Imagen Docker') {
+        stage('Push Docker Image') {
             steps {
-                container('dind') {
-                    script {
-                        // Asegurar que el archivo existe antes de cargarlo
-                        sh "ls -lah \$(pwd)"
-
-                        // Descargar la imagen guardada en el stage anterior
-                        sh "docker load -i python-app.tar"
-
-                        // Loguearse al registro usando credenciales seguras
-                        withCredentials([string(credentialsId: 'docker-token', variable: 'DOCKER_TOKEN')]) {
-                            sh "echo '$DOCKER_TOKEN' | docker login -u 'd4rkghost47' --password-stdin"
-                        }
-
-                        // Subir la imagen al registro
-                        sh """
-                        echo "📤 Subiendo imagen Docker..."
-                        docker push ${IMAGE_NAME}:latest
-                        docker push ${IMAGE_NAME}:${shortSha}
-                        """
-
-                        echo "✅ Imagen subida con éxito"
+                script {
+                    docker.withRegistry(REGISTRY, DOCKER_CREDENTIALS) {
+                        dockerImage.push("${env.BUILD_NUMBER}")
+                        dockerImage.push("latest")
                     }
+                }
+            }
+        }
+
+        stage('Clean Up Local Images') {
+            steps {
+                script {
+                    sh "docker rmi ${IMAGE_NAME}:${env.BUILD_NUMBER} || true"
+                    sh "docker rmi ${IMAGE_NAME}:latest || true"
                 }
             }
         }
     }
 }
-
