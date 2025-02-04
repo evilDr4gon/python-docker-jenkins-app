@@ -16,23 +16,27 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    def shortSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    echo "🐍 Construyendo imagen con SHA: ${shortSha}"
+                container('dind') {  // 🔥 Asegurar que Docker está disponible
+                    script {
+                        def shortSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                        echo "🐍 Construyendo imagen con SHA: ${shortSha}"
 
-                    dockerImage = docker.build("${IMAGE_NAME}:${shortSha}")
-
-                    // Etiquetar también como 'latest'
-                    sh "docker tag ${IMAGE_NAME}:${shortSha} ${IMAGE_NAME}:latest"
+                        sh """
+                        docker build -t ${IMAGE_NAME}:${shortSha} .
+                        docker tag ${IMAGE_NAME}:${shortSha} ${IMAGE_NAME}:latest
+                        """
+                    }
                 }
             }
         }
 
         stage('Test Docker Image') {
             steps {
-                script {
-                    dockerImage.inside {
-                        sh 'echo "✅ Pruebas ejecutadas con éxito"'
+                container('dind') {  // 🔥 Asegurar que Docker está disponible
+                    script {
+                        dockerImage.inside {
+                            sh 'echo "✅ Pruebas ejecutadas con éxito"'
+                        }
                     }
                 }
             }
@@ -40,10 +44,12 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry(REGISTRY, DOCKER_CREDENTIALS) {
-                        dockerImage.push("${env.BUILD_NUMBER}")
-                        dockerImage.push("latest")
+                container('dind') {  // 🔥 Asegurar que Docker está disponible
+                    script {
+                        docker.withRegistry(REGISTRY, DOCKER_CREDENTIALS) {
+                            dockerImage.push("${env.BUILD_NUMBER}")
+                            dockerImage.push("latest")
+                        }
                     }
                 }
             }
@@ -51,11 +57,14 @@ pipeline {
 
         stage('Clean Up Local Images') {
             steps {
-                script {
-                    sh "docker rmi ${IMAGE_NAME}:${env.BUILD_NUMBER} || true"
-                    sh "docker rmi ${IMAGE_NAME}:latest || true"
+                container('dind') {  // 🔥 Asegurar que Docker está disponible
+                    script {
+                        sh "docker rmi ${IMAGE_NAME}:${env.BUILD_NUMBER} || true"
+                        sh "docker rmi ${IMAGE_NAME}:latest || true"
+                    }
                 }
             }
         }
     }
 }
+
