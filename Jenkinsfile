@@ -1,4 +1,3 @@
-
 pipeline {
     agent { label 'jenkinsv2-jenkins-agent' }
 
@@ -11,7 +10,7 @@ pipeline {
             steps {
                 container('dind') {
                     script {
-                        // Configurar el directorio como seguro para Git antes de ejecutar comandos
+                        // Configurar el directorio como seguro para Git
                         sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
 
                         // Obtener el short SHA del commit actual
@@ -22,12 +21,15 @@ pipeline {
                         docker build -t ${IMAGE_NAME}:${shortSha} .
                         docker build -t ${IMAGE_NAME}:latest .
 
-                        # Guardar la imagen en un archivo .tar
-                        docker save -o ${IMAGE_NAME}.tar ${IMAGE_NAME}:${shortSha} ${IMAGE_NAME}:latest
+                        # Asegurar que el directorio de almacenamiento existe
+                        mkdir -p /home/jenkins/agent/workspace/
+
+                        # Guardar la imagen en un archivo .tar dentro del workspace
+                        docker save -o /home/jenkins/agent/workspace/python-app.tar ${IMAGE_NAME}:${shortSha} ${IMAGE_NAME}:latest
                         """
 
                         // Guardar la imagen como artefacto en Jenkins
-                        archiveArtifacts artifacts: "${IMAGE_NAME}.tar", fingerprint: true
+                        archiveArtifacts artifacts: "python-app.tar", fingerprint: true
                     }
                 }
             }
@@ -38,7 +40,7 @@ pipeline {
                 container('dind') {
                     script {
                         // Descargar la imagen guardada en el stage anterior
-                        sh "docker load -i ${IMAGE_NAME}.tar"
+                        sh "docker load -i python-app.tar"
 
                         // Loguearse al registro usando credenciales seguras
                         withCredentials([string(credentialsId: 'docker-token', variable: 'DOCKER_TOKEN')]) {
