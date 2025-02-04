@@ -17,15 +17,18 @@ pipeline {
                         def shortSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         echo "🐍 Construyendo imagen con SHA: ${shortSha}"
 
+                        // Asegurar que el directorio de almacenamiento existe
+                        sh "mkdir -p \$(pwd)"
+
+                        // Guardar la imagen en el workspace
                         sh """
                         docker build -t ${IMAGE_NAME}:${shortSha} .
                         docker build -t ${IMAGE_NAME}:latest .
 
-                        # Asegurar que el directorio de almacenamiento existe
-                        mkdir -p /home/jenkins/agent/workspace/
+                        echo "📦 Guardando imagen en ${IMAGE_NAME}.tar..."
+                        docker save -o \$(pwd)/python-app.tar ${IMAGE_NAME}:${shortSha} ${IMAGE_NAME}:latest
 
-                        # Guardar la imagen en un archivo .tar dentro del workspace
-                        docker save -o /home/jenkins/agent/workspace/python-app.tar ${IMAGE_NAME}:${shortSha} ${IMAGE_NAME}:latest
+                        ls -lah \$(pwd)  # Verificar que el archivo se haya creado
                         """
 
                         // Guardar la imagen como artefacto en Jenkins
@@ -39,6 +42,9 @@ pipeline {
             steps {
                 container('dind') {
                     script {
+                        // Asegurar que el archivo existe antes de cargarlo
+                        sh "ls -lah \$(pwd)"
+
                         // Descargar la imagen guardada en el stage anterior
                         sh "docker load -i python-app.tar"
 
