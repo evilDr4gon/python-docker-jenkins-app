@@ -10,6 +10,10 @@ pipeline {
             steps {
                 container('dind') {
                     script {
+                        // Configurar el directorio como seguro para Git antes de ejecutar comandos
+                        sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
+
+                        // Obtener el short SHA del commit actual
                         def shortSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         echo "🐍 Construyendo imagen con SHA: ${shortSha}"
 
