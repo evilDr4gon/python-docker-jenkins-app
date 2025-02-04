@@ -4,7 +4,6 @@ pipeline {
     environment {
         IMAGE_NAME = "d4rkghost47/python-app"
         REGISTRY = "https://index.docker.io/v1/"
-        DOCKER_CREDENTIALS = "dckr_pat_Y_hgFHJEDGlUY-3w_Ev30kDVT3w"  // ID de las credenciales en Jenkins
     }
 
     stages {
@@ -16,12 +15,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                container('dind') {  // 🔥 Asegurar que Docker está disponible
+                container('dind') {  // Asegurar que Docker está disponible
                     script {
-                        // 🔥 SOLUCIÓN: Configurar Git dentro del contenedor 'dind'
                         sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
-
-                        // Obtener el short SHA del commit actual
                         def shortSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         echo "🐍 Construyendo imagen con SHA: ${shortSha}"
 
@@ -36,11 +32,14 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                container('dind') {  // 🔥 Asegurar que Docker está disponible
+                container('dind') {  // Asegurar que Docker está disponible
                     script {
-                        docker.withRegistry(REGISTRY, DOCKER_CREDENTIALS) {
-                            sh "docker push ${IMAGE_NAME}:${env.BUILD_NUMBER}"
-                            sh "docker push ${IMAGE_NAME}:latest"
+                        withCredentials([string(credentialsId: 'docker-token', variable: 'DOCKER_TOKEN')]) {
+                            sh """
+                            echo "$DOCKER_TOKEN" | docker login -u "d4rkghost47" --password-stdin
+                            docker push ${IMAGE_NAME}:${env.BUILD_NUMBER}
+                            docker push ${IMAGE_NAME}:latest
+                            """
                         }
                     }
                 }
@@ -49,7 +48,7 @@ pipeline {
 
         stage('Clean Up Local Images') {
             steps {
-                container('dind') {  // 🔥 Asegurar que Docker está disponible
+                container('dind') {  // Asegurar que Docker está disponible
                     script {
                         sh "docker rmi ${IMAGE_NAME}:${env.BUILD_NUMBER} || true"
                         sh "docker rmi ${IMAGE_NAME}:latest || true"
@@ -59,5 +58,4 @@ pipeline {
         }
     }
 }
-
 
