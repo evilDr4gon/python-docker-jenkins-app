@@ -11,9 +11,6 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 checkout scm
-
-                // 🔥 Solución: Marcar el directorio como seguro en Git
-                sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
             }
         }
 
@@ -21,6 +18,10 @@ pipeline {
             steps {
                 container('dind') {  // 🔥 Asegurar que Docker está disponible
                     script {
+                        // 🔥 SOLUCIÓN: Configurar Git dentro del contenedor 'dind'
+                        sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
+
+                        // Obtener el short SHA del commit actual
                         def shortSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         echo "🐍 Construyendo imagen con SHA: ${shortSha}"
 
