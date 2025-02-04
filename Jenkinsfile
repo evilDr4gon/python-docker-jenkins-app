@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "d4rkghost47/python-app"
         REGISTRY = "https://index.docker.io/v1/"
-        DOCKER_CREDENTIALS = "docker-token"  // ID de las credenciales en Jenkins
+        DOCKER_CREDENTIALS = "dckr_pat_Y_hgFHJEDGlUY-3w_Ev30kDVT3w"  // ID de las credenciales en Jenkins
     }
 
     stages {
