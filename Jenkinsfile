@@ -11,6 +11,9 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 checkout scm
+
+                // 🔥 Solución: Marcar el directorio como seguro en Git
+                sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
             }
         }
 
@@ -30,25 +33,13 @@ pipeline {
             }
         }
 
-        stage('Test Docker Image') {
-            steps {
-                container('dind') {  // 🔥 Asegurar que Docker está disponible
-                    script {
-                        dockerImage.inside {
-                            sh 'echo "✅ Pruebas ejecutadas con éxito"'
-                        }
-                    }
-                }
-            }
-        }
-
         stage('Push Docker Image') {
             steps {
                 container('dind') {  // 🔥 Asegurar que Docker está disponible
                     script {
                         docker.withRegistry(REGISTRY, DOCKER_CREDENTIALS) {
-                            dockerImage.push("${env.BUILD_NUMBER}")
-                            dockerImage.push("latest")
+                            sh "docker push ${IMAGE_NAME}:${env.BUILD_NUMBER}"
+                            sh "docker push ${IMAGE_NAME}:latest"
                         }
                     }
                 }
