@@ -37,7 +37,7 @@ pipeline {
                         withCredentials([string(credentialsId: 'docker-token', variable: 'DOCKER_TOKEN')]) {
                             sh """
                             echo "$DOCKER_TOKEN" | docker login -u "d4rkghost47" --password-stdin
-                            docker push ${IMAGE_NAME}:${env.BUILD_NUMBER}
+                            docker push ${IMAGE_NAME}:${shortSha}
                             docker push ${IMAGE_NAME}:latest
                             """
                         }
