@@ -32,6 +32,29 @@ pipeline {
             }
         }
 
+	stage('Run Integration Test') {
+        steps {
+            container('dind') {
+                script {
+                    sh """
+                    echo "🚀 Ejecutando contenedor para pruebas de integración..."
+                    docker run -d --rm --name test-container -p 8080:8080 ${IMAGE_NAME}:${env.SHORT_SHA}
+                    sleep 5  # Esperar que el contenedor inicie
+
+                    echo "🔍 Probando endpoint /ping..."
+                    docker exec test-container python -c "import urllib.request; exit(0) if urllib.request.urlopen('http://localhost:8080/ping').getcode() == 200 else exit(1)"
+
+                    echo "🛑 Deteniendo contenedor..."
+                    docker stop test-container                   
+                    """
+                }
+            }
+        }
+
+	
+	}
+
+	stage
         stage('Push Docker Image') {
             steps {
                 container('dind') {  // Asegurar que Docker está disponible
@@ -43,17 +66,6 @@ pipeline {
                             docker push ${IMAGE_NAME}:latest
                             """
                         }
-                    }
-                }
-            }
-        }
-
-        stage('Clean Up Local Images') {
-            steps {
-                container('dind') {  // Asegurar que Docker está disponible
-                    script {
-                        sh "docker rmi ${IMAGE_NAME}:${env.SHORT_SHA} || true"
-                        sh "docker rmi ${IMAGE_NAME}:latest || true"
                     }
                 }
             }
