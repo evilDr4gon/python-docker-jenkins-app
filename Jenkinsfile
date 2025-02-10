@@ -19,6 +19,7 @@ pipeline {
             steps {
                 container('dind') {  
                     script {
+		        sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
                         env.SHORT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         echo "🐍 Construyendo imagen con SHA: ${env.SHORT_SHA}"
 
