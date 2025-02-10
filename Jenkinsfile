@@ -6,6 +6,8 @@ pipeline {
         REGISTRY = "https://index.docker.io/v1/"
         SHORT_SHA = "${GIT_COMMIT[0..7]}"
         RECIPIENTS = "jose_reynoso@siman.com,reynosojose2005@gmail.com"
+        GIT_MANIFESTS_REPO = "git@github.com:evilDr4gon/python-docker-jenkins-k8s.git"
+        GIT_MANIFESTS_BRANCH = "main"
     }
 
     stages {
@@ -17,17 +19,17 @@ pipeline {
 
         stage('Run Unit Tests') {
             steps {
-                container('dind') {  
+                container('dind') {
                     script {
-			sh """
-			docker run --rm -v "\$(pwd):/app" -w /app python:3.9-slim bash -c "
-			    python3 -m venv venv &&
-			    source venv/bin/activate && 
-			    pip install --upgrade pip &&
-			    pip install -r requirements.txt &&
-			    pytest tests/ --disable-warnings --maxfail=1
-			"
-			"""
+                        sh """
+                        docker run --rm -v "\$(pwd):/app" -w /app python:3.9-slim bash -c "
+                            python3 -m venv venv &&
+                            source venv/bin/activate &&
+                            pip install --upgrade pip &&
+                            pip install -r requirements.txt &&
+                            pytest tests/ --disable-warnings --maxfail=1
+                        "
+                        """
                     }
                 }
             }
@@ -101,6 +103,31 @@ pipeline {
                             docker push ${IMAGE_NAME}:latest
                             """
                         }
+                    }
+                }
+            }
+        }
+
+        stage('Update Helm Manifests in GitOps Repo') {
+            steps {
+                script {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'github-ssh-key', keyFileVariable: 'SSH_KEY')]) {
+                        sh """
+                        echo "📂 Clonando repo de manifiestos..."
+                        rm -rf python-docker-jenkins-k8s
+                        GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git clone ${GIT_MANIFESTS_REPO}
+                        cd python-docker-jenkins-k8s
+
+                        echo "✏️ Actualizando el values.yaml con la nueva imagen..."
+                        sed -i 's|tag: .*|tag: ${env.SHORT_SHA}|g' values.yaml
+
+                        echo "📤 Haciendo commit y push..."
+                        git config user.email "ci-bot@example.com"
+                        git config user.name "CI/CD Bot"
+                        git add values.yaml
+                        git commit -m "🚀 Actualizando imagen a ${env.SHORT_SHA}"
+                        GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git push origin ${GIT_MANIFESTS_BRANCH}
+                        """
                     }
                 }
             }
