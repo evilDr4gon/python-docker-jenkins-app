@@ -55,14 +55,24 @@ pipeline {
                     """
                 }
                 success {
-                    mail to: env.RECIPIENTS,
-                         subject: "✅ Éxito: Pruebas de integración en ${env.JOB_NAME}",
-                         body: "Las pruebas de integración pasaron correctamente en ${env.BUILD_URL}"
+		    emailext subject: "✅ Éxito: Pruebas de integración en ${env.JOB_NAME}",
+			     body: """
+			     <h3 style='color:green;'>✅ Las pruebas de integración pasaron correctamente</h3>
+			     <p>Pipeline: <b>${env.JOB_NAME}</b></p>
+			     <p>Revisa los detalles en: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+			     """,
+			     to: env.RECIPIENTS,
+			     mimeType: 'text/html'
                 }
                 failure {
-                    mail to: env.RECIPIENTS,
-                         subject: "❌ Falla: Pruebas de integración en ${env.JOB_NAME}",
-                         body: "Las pruebas de integración fallaron en ${env.BUILD_URL}. Revisa los logs."
+		    emailext subject: "❌ Falla: Pruebas de integración en ${env.JOB_NAME}",
+			     body: """
+			     <h3 style='color:red;'>❌ Las pruebas de integración fallaron</h3>
+			     <p>Pipeline: <b>${env.JOB_NAME}</b></p>
+			     <p>Ver logs aquí: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>
+			     """,
+			     to: env.RECIPIENTS,
+			     mimeType: 'text/html'
                 }
             }
         }
