@@ -43,7 +43,7 @@ pipeline {
                         sleep 5  # Esperar que el contenedor inicie
 
                         echo "🔍 Probando endpoint /ping..."
-                        docker exec test-container python -c "import urllib.request; exit(0) if urllib.request.urlopen('http://localhost:8080/pong').getcode() == 200 else exit(1)"
+                        docker exec test-container python -c "import urllib.request; exit(0) if urllib.request.urlopen('http://localhost:8080/ping').getcode() == 200 else exit(1)"
                         """
                     }
                 }
