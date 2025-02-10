@@ -108,7 +108,7 @@ pipeline {
             }
         }
 
-	stage('Update Helm Manifests in GitOps Repo') {
+	stage('Update Helm/K8s Repo') {
 	    steps {
 		script {
 		    withCredentials([sshUserPrivateKey(credentialsId: 'github-ssh-key', keyFileVariable: 'SSH_KEY', passphraseVariable: 'SSH_PASSPHRASE')]) {
