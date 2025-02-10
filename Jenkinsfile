@@ -17,18 +17,17 @@ pipeline {
 
         stage('Run Unit Tests') {
             steps {
-                container('dind') {  // 🔹 Ahora está correctamente encerrado en llaves
+                container('dind') {  
                     script {
-                        sh """
-                        echo "🔬 Ejecutando pruebas unitarias en un contenedor Python..."
-                        docker run --rm -v "\$(pwd):/app" -w /app python:3.9-slim sh -c "
-                            python3 -m venv venv &&
-                            source venv/bin/activate &&
-                            pip install --upgrade pip &&
-                            pip install -r requirements.txt &&
-                            pytest tests/ --disable-warnings --maxfail=1
-                        "
-                        """  // 🔹 Aquí estaba mal cerrada la llave }
+			sh """
+			docker run --rm -v "\$(pwd):/app" -w /app python:3.9-slim bash -c "
+			    python3 -m venv venv &&
+			    source venv/bin/activate && 
+			    pip install --upgrade pip &&
+			    pip install -r requirements.txt &&
+			    pytest tests/ --disable-warnings --maxfail=1
+			"
+			"""
                     }
                 }
             }
