@@ -1,4 +1,3 @@
-// Pipeline v1.0.0
 pipeline {
     agent { label 'jenkinsv2-jenkins-agent' }
 
@@ -20,7 +19,6 @@ pipeline {
             steps {
                 container('dind') {  
                     script {
-                        sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
                         env.SHORT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                         echo "🐍 Construyendo imagen con SHA: ${env.SHORT_SHA}"
 
@@ -48,13 +46,13 @@ pipeline {
                     }
                 }
             }
-	    post {
-		always {
-			
-		}
-	    }
-	    	
             post {
+                always {
+                    sh """
+                    echo "🛑 Asegurando que el contenedor de prueba se detenga..."
+                    docker stop test-container || true
+                    """
+                }
                 success {
                     mail to: env.RECIPIENTS,
                          subject: "✅ Éxito: Pruebas de integración en ${env.JOB_NAME}",
@@ -85,3 +83,4 @@ pipeline {
         }
     }
 }
+
