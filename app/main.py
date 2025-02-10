@@ -8,7 +8,7 @@ def hello_world():
 
 @app.route("/ping")
 def ping():
-    return "Pong v2!"
+    return "Pong!"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
