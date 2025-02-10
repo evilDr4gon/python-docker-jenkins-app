@@ -17,7 +17,7 @@ pipeline {
 
         stage('Run Unit Tests') {
             steps {
-                container('dind') 
+                container('dind') {  // 🔹 Ahora está correctamente encerrado en llaves
                     script {
                         sh """
                         echo "🔬 Ejecutando pruebas unitarias en un contenedor Python..."
@@ -28,7 +28,7 @@ pipeline {
                             pip install -r requirements.txt &&
                             pytest tests/ --disable-warnings --maxfail=1
                         "
-                        """
+                        """  // 🔹 Aquí estaba mal cerrada la llave }
                     }
                 }
             }
