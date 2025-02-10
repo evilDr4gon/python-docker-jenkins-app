@@ -12,8 +12,31 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 checkout scm
-                script {
-                    echo "🐍 Commit SHA detectado: ${env.SHORT_SHA}"
+            }
+        }
+
+        stage('Run Unit Tests') {
+            steps {
+                container('python') {  
+                    script {
+                        sh """
+                        echo "🔬 Ejecutando pruebas unitarias..."
+                        pip install -r requirements.txt
+                        pytest tests/ --disable-warnings --maxfail=1
+                        """
+                    }
+                }
+            }
+            post {
+                success {
+                    echo "✅ Todas las pruebas unitarias pasaron correctamente."
+                }
+
+                failure {
+                    mail to: env.RECIPIENTS,
+                         subject: "❌ Falla: Pruebas unitarias en ${env.JOB_NAME}",
+                         body: "Las pruebas unitarias fallaron en ${env.BUILD_URL}. Revisa los logs."
+                    error("❌ Fallaron las pruebas unitarias. Deteniendo pipeline.")
                 }
             }
         }
