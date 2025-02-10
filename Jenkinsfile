@@ -17,22 +17,25 @@ pipeline {
 
         stage('Run Unit Tests') {
             steps {
-                script {
-                    sh """
-                    echo "🔬 Ejecutando pruebas unitarias..."
-                    python3 -m venv venv
-                    source venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
-                    pytest tests/ --disable-warnings --maxfail=1
-                    """
+                container('dind') 
+                    script {
+                        sh """
+                        echo "🔬 Ejecutando pruebas unitarias en un contenedor Python..."
+                        docker run --rm -v "\$(pwd):/app" -w /app python:3.9-slim sh -c "
+                            python3 -m venv venv &&
+                            source venv/bin/activate &&
+                            pip install --upgrade pip &&
+                            pip install -r requirements.txt &&
+                            pytest tests/ --disable-warnings --maxfail=1
+                        "
+                        """
+                    }
                 }
             }
             post {
                 success {
                     echo "✅ Todas las pruebas unitarias pasaron correctamente."
                 }
-
                 failure {
                     mail to: env.RECIPIENTS,
                          subject: "❌ Falla: Pruebas unitarias en ${env.JOB_NAME}",
