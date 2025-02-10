@@ -1,11 +1,10 @@
-// Pipeline v1.0.3
 pipeline {
     agent { label 'jenkinsv2-jenkins-agent' }
 
     environment {
         IMAGE_NAME = "d4rkghost47/python-app"
         REGISTRY = "https://index.docker.io/v1/"
-        SHORT_SHA = ''
+        SHORT_SHA = "${GIT_COMMIT[0..7]}"  
         RECIPIENTS = "jose_reynoso@siman.com,reynosojose2005@gmail.com"
     }
 
@@ -14,8 +13,7 @@ pipeline {
             steps {
                 checkout scm
                 script {
-                    sh "git config --global --add safe.directory /home/jenkins/agent/workspace/python-app"
-                    env.SHORT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    echo "🐍 Commit SHA detectado: ${env.SHORT_SHA}"
                 }
             }
         }
@@ -24,7 +22,7 @@ pipeline {
             steps {
                 container('dind') {
                     script {
-                        echo "🐍 Construyendo imagen con SHA: ${env.SHORT_SHA}"
+                        echo "🐳 Construyendo imagen con SHA: ${env.SHORT_SHA}"
                         sh """
                         docker build -t ${IMAGE_NAME}:${env.SHORT_SHA} .
                         docker tag ${IMAGE_NAME}:${env.SHORT_SHA} ${IMAGE_NAME}:latest
@@ -78,28 +76,6 @@ pipeline {
                             """
                         }
                     }
-                }
-            }
-        }
-
-        stage('Update Helm Manifests') {
-            steps {
-                script {
-                    sh """
-                    echo "📂 Clonando repo de manifiestos..."
-                    git clone https://github.com/tu-usuario/gitops-repo.git
-                    cd gitops-repo/helm
-
-                    echo "✏️ Actualizando el values.yaml con la nueva imagen..."
-                    sed -i 's|tag: latest|tag: ${env.SHORT_SHA}|g' values.yaml
-
-                    echo "📤 Haciendo commit y push..."
-                    git config --global user.email "tu-email@example.com"
-                    git config --global user.name "Jenkins"
-                    git add values.yaml
-                    git commit -m "Update image tag to ${env.SHORT_SHA}"
-                    git push origin main
-                    """
                 }
             }
         }
