@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "d4rkghost47/python-app"
         REGISTRY = "https://index.docker.io/v1/"
-        SHORT_SHA = "${GIT_COMMIT[0..7]}"  
+        SHORT_SHA = "${GIT_COMMIT[0..7]}"
         RECIPIENTS = "jose_reynoso@siman.com,reynosojose2005@gmail.com"
     }
 
@@ -17,14 +17,15 @@ pipeline {
 
         stage('Run Unit Tests') {
             steps {
-                container('python') {  
-                    script {
-                        sh """
-                        echo "🔬 Ejecutando pruebas unitarias..."
-                        pip install -r requirements.txt
-                        pytest tests/ --disable-warnings --maxfail=1
-                        """
-                    }
+                script {
+                    sh """
+                    echo "🔬 Ejecutando pruebas unitarias..."
+                    python3 -m venv venv
+                    source venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                    pytest tests/ --disable-warnings --maxfail=1
+                    """
                 }
             }
             post {
