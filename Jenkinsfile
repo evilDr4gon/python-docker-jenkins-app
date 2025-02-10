@@ -108,30 +108,43 @@ pipeline {
             }
         }
 
-        stage('Update Helm Manifests in GitOps Repo') {
-            steps {
-                script {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'github-ssh-key', keyFileVariable: 'SSH_KEY')]) {
-                        sh """
-                        echo "📂 Clonando repo de manifiestos..."
-                        rm -rf python-docker-jenkins-k8s
-                        GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git clone ${GIT_MANIFESTS_REPO}
-                        cd python-docker-jenkins-k8s
+	stage('Update Helm Manifests in GitOps Repo') {
+	    steps {
+		script {
+		    withCredentials([sshUserPrivateKey(credentialsId: 'github-ssh-key', keyFileVariable: 'SSH_KEY', passphraseVariable: 'SSH_PASSPHRASE')]) {
+			sh """
+			echo "📂 Configurando ssh-agent para clonar el repositorio..."
+			eval \$(ssh-agent -s)
+			echo "$SSH_PASSPHRASE" | ssh-add $SSH_KEY
+			echo "📂 Clonando repo de manifiestos..."
+			rm -rf python-docker-jenkins-k8s
+			GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git clone ${GIT_MANIFESTS_REPO}
+			cd python-docker-jenkins-k8s
 
-                        echo "✏️ Actualizando el values.yaml con la nueva imagen..."
-                        sed -i 's|tag: .*|tag: ${env.SHORT_SHA}|g' values.yaml
+			echo "✏️ Actualizando el values.yaml con la nueva imagen..."
+			sed -i 's|tag: .*|tag: ${env.SHORT_SHA}|g' values.yaml
 
-                        echo "📤 Haciendo commit y push..."
-                        git config user.email "ci-bot@example.com"
-                        git config user.name "CI/CD Bot"
-                        git add values.yaml
-                        git commit -m "🚀 Actualizando imagen a ${env.SHORT_SHA}"
-                        GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git push origin ${GIT_MANIFESTS_BRANCH}
-                        """
-                    }
-                }
-            }
-        }
+			echo "📤 Haciendo commit y push..."
+			git config user.email "ci-bot@example.com"
+			git config user.name "CI/CD Bot"
+			git add values.yaml
+			git commit -m "🚀 Actualizando imagen a ${env.SHORT_SHA}"
+			GIT_SSH_COMMAND="ssh -i $SSH_KEY -o StrictHostKeyChecking=no" git push origin ${GIT_MANIFESTS_BRANCH}
+			"""
+		    }
+		}
+	    }
+	    post {
+		failure {
+		    mail to: env.RECIPIENTS,
+			 subject: "❌ Falla: Actualización de manifiestos en ${env.JOB_NAME}",
+			 body: "El pipeline falló al actualizar los manifiestos en el repositorio GitOps. Revisa los logs en ${env.BUILD_URL}."
+		    error("❌ Falló la actualización del repositorio de manifiestos.")
+		}
+	    }
+	}
+
+
     }
 }
 
