@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "d4rkghost47/python-app"
         REGISTRY = "https://index.docker.io/v1/"
-        SHORT_SHA = '' // Variable para almacenar el SHA del commit
+        SHORT_SHA = '' 
         RECIPIENTS = "jose_reynoso@siman.com,reynosojose2005@gmail.com"
     }
 
