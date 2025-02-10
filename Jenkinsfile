@@ -44,13 +44,16 @@ pipeline {
 
                         echo "🔍 Probando endpoint /ping..."
                         docker exec test-container python -c "import urllib.request; exit(0) if urllib.request.urlopen('http://localhost:8080/ping').getcode() == 200 else exit(1)"
-
-                        echo "🛑 Deteniendo contenedor..."
-                        docker stop test-container                   
                         """
                     }
                 }
             }
+	    post {
+		always {
+			
+		}
+	    }
+	    	
             post {
                 success {
                     mail to: env.RECIPIENTS,
