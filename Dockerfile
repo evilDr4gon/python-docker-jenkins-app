@@ -19,6 +19,7 @@ EXPOSE 8080
 
 CMD ["python", "app/main.py"]
 
+## Configuracion de helthcheck
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD python -c "import urllib.request; exit(0) if urllib.request.urlopen('http://localhost:8080/ping').getcode() == 200 else exit(1)"
 
