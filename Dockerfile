@@ -1,25 +1,40 @@
-FROM python:3.9-slim
+# 🛠️ Etapa 1: Construcción (evita instalar paquetes innecesarios en la imagen final)
+FROM python:3.9-slim AS builder
 
 WORKDIR /app
 
 # Crea un usuario no root "app" con UID 10001
 RUN groupadd -g 3000 app && useradd -m -u 10001 -g 3000 app
 
-COPY requirements.txt requirements.txt
+# Copia solo los archivos necesarios para instalar dependencias
+COPY requirements.txt .
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Instala dependencias en una carpeta separada para que no se copien archivos innecesarios
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
+# 🏗️ Etapa 2: Imagen final
+FROM python:3.9-slim
+
+WORKDIR /app
+
+# Copia las dependencias instaladas en la etapa anterior
+COPY --from=builder /install /usr/local
+
+# Copia la aplicación
 COPY ./app ./app
 
+# Cambia los permisos al usuario no root
 RUN chown -R app:app /app
 
+# Cambia al usuario seguro
 USER app
 
 EXPOSE 8080
 
-CMD ["python", "app/main.py"]
+# Usa Gunicorn para producción
+CMD ["gunicorn", "--workers=2", "--bind=0.0.0.0:8080", "app.main:app"]
 
-## Configuracion de helthcheck
+# 🔥 Configuración de Healthcheck para Kubernetes
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD python -c "import urllib.request; exit(0) if urllib.request.urlopen('http://localhost:8080/ping').getcode() == 200 else exit(1)"
 
